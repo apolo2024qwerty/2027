@@ -53,8 +53,8 @@ export default function useActions() {
 
     return {
       toast, logout, reward,
-      async login(username, password, register = false, display_name) {
-        const res = await api(register ? "/register" : "/login", { method: "POST", body: { username, password, display_name } });
+      async login(username, password, register = false, display_name, invite_code) {
+        const res = await api(register ? "/register" : "/login", { method: "POST", body: { username, password, display_name, invite_code } });
         setToken(res.token);
         dispatch({ type: "auth", payload: res });
         return res;

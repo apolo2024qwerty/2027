@@ -426,3 +426,12 @@ button.vtile:hover { transform: translateY(-6px) scale(1.02); z-index: 3; box-sh
   .apt-head { align-items: flex-start; }
   .moods.big .mood { width: 50px; height: 50px; font-size: 29px; }
 }
+
+/* ───────── Sala de control ───────── */
+.account { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: var(--r-lg); background: rgba(5, 12, 24, .3); border: 1px solid var(--line); flex-wrap: wrap; }
+.account.off { opacity: .6; }
+.account-id { min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+.account-id b { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.account-stats { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12.5px; }
+.account-stats span { padding: 3px 9px; border-radius: 8px; background: rgba(255, 255, 255, .07); }
+.btn.danger:not(.ghost):not(:disabled) { background: rgba(226, 125, 96, .2); border-color: rgba(226, 125, 96, .5); }

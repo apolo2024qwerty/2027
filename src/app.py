@@ -53,7 +53,7 @@ def jwt_missing(reason):
 def jwt_expired(header, payload):
     return jsonify({"message": "Tu sesión venció, entra de nuevo"}), 401
 
-# add the admin
+# El panel técnico de tablas solo existe en desarrollo; en producción quedaría abierto a cualquiera
 if ENV == "development":
     setup_admin(app)
 

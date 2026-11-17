@@ -14,7 +14,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from api.models import (db, User, XPEvent, Pillar, Goal, Habit, HabitLog, DailyLog, Workout,
+from api.models import (db, User, AppSetting, XPEvent, Pillar, Goal, Habit, HabitLog, DailyLog, Workout,
                         FocusSession, JournalEntry, Fund, Transaction, Budget, Investment,
                         ApartmentItem, VisionItem, Reward, ChatMessage, now)
 from api.seed import seed_user_plan
@@ -24,13 +24,10 @@ api = Blueprint('api', __name__)
 CORS(api)
 
 
-
 @api.route('/health', methods=['GET'])
 def health():
     """La usa el cron: despierta el servidor y toca la base de datos."""
     return jsonify({"ok": True, "users": User.query.count()})
-
-
 
 RESOURCES = {
     "pillars": Pillar, "goals": Goal, "habits": Habit, "workouts": Workout, "journal": JournalEntry,
@@ -131,6 +128,25 @@ def owned(model, item_id, user):
 
 # ───────────────────────── autenticación ─────────────────────────
 
+def get_setting(key, default=""):
+    row = AppSetting.query.filter_by(key=key).first()
+    return row.value if row else default
+
+
+def set_setting(key, value):
+    row = AppSetting.query.filter_by(key=key).first()
+    if not row:
+        row = AppSetting(key=key)
+        db.session.add(row)
+    row.value = str(value)
+
+
+@api.route('/public/config', methods=['GET'])
+def public_config():
+    """Lo lee el login para saber si se pueden crear cuentas: open, code o closed."""
+    return jsonify({"registration": get_setting("registration", "open")})
+
+
 def find_user(username):
     return User.query.filter(func.lower(User.username) == (username or "").strip().lower()).first()
 
@@ -142,6 +158,11 @@ def register():
     password = data.get("password") or ""
     if len(username) < 3 or len(password) < 4:
         raise APIException("El usuario necesita 3 caracteres o más y la clave 4 o más", 400)
+    mode = get_setting("registration", "open")
+    if mode == "closed":
+        raise APIException("El registro está cerrado. Pídele una cuenta al administrador.", 403)
+    if mode == "code" and (data.get("invite_code") or "").strip() != get_setting("invite_code"):
+        raise APIException("El código de invitación no es correcto", 403)
     if find_user(username):
         raise APIException("Ese usuario ya existe", 409)
     user = User(username=username, password_hash=generate_password_hash(password),
@@ -159,6 +180,8 @@ def login():
     user = find_user(data.get("username"))
     if not user or not check_password_hash(user.password_hash, data.get("password") or ""):
         raise APIException("Usuario o clave incorrectos", 401)
+    if not user.is_active:
+        raise APIException("Esta cuenta está desactivada. Habla con el administrador.", 403)
     return jsonify({"token": create_access_token(identity=str(user.id)), "user": user.serialize()})
 
 
@@ -532,6 +555,108 @@ def ai_clear():
     ChatMessage.query.filter_by(user_id=user.id).delete()
     db.session.commit()
     return jsonify({"ok": True})
+
+
+# ───────────────────────── sala de control (solo admin) ─────────────────────────
+
+# Orden de borrado: primero lo que depende de otras tablas
+USER_TABLES = [HabitLog, XPEvent, ChatMessage, DailyLog, Workout, FocusSession, JournalEntry, Transaction,
+               Goal, Habit, Budget, Investment, ApartmentItem, VisionItem, Reward, Fund, Pillar]
+
+
+def admin_user():
+    user = current_user()
+    if not user.is_admin:
+        raise APIException("Solo el administrador puede hacer esto", 403)
+    return user
+
+
+def admin_row(u):
+    last = db.session.query(func.max(XPEvent.created_at)).filter(XPEvent.user_id == u.id).scalar()
+    return {
+        **u.serialize(),
+        "goals": Goal.query.filter_by(user_id=u.id).count(),
+        "goals_done": Goal.query.filter_by(user_id=u.id, status="done").count(),
+        "habit_marks": HabitLog.query.filter_by(user_id=u.id).count(),
+        "last_activity": last.isoformat() if last else None,
+    }
+
+
+@api.route('/admin/users', methods=['GET'])
+@jwt_required()
+def admin_users():
+    admin_user()
+    return jsonify({
+        "users": [admin_row(u) for u in User.query.order_by(User.id)],
+        "settings": {"registration": get_setting("registration", "open"), "invite_code": get_setting("invite_code")},
+    })
+
+
+@api.route('/admin/users', methods=['POST'])
+@jwt_required()
+def admin_create_user():
+    """Crear una cuenta a mano (sirve cuando el registro está cerrado)."""
+    admin_user()
+    data = request.get_json(silent=True) or {}
+    username, password = (data.get("username") or "").strip(), data.get("password") or ""
+    if len(username) < 3 or len(password) < 6:
+        raise APIException("El usuario necesita 3 caracteres o más y la clave 6 o más", 400)
+    if find_user(username):
+        raise APIException("Ese usuario ya existe", 409)
+    user = User(username=username, password_hash=generate_password_hash(password),
+                display_name=(data.get("display_name") or username).strip(),
+                settings={"board_style": "collage", "water_goal": 2500, "sky": "auto", "monthly_income": 0})
+    db.session.add(user)
+    db.session.commit()
+    seed_user_plan(user, full=False)
+    return jsonify({"user": admin_row(user)}), 201
+
+
+@api.route('/admin/users/<int:user_id>', methods=['PUT', 'DELETE'])
+@jwt_required()
+def admin_change_user(user_id):
+    me = admin_user()
+    target = db.session.get(User, user_id)
+    if not target:
+        raise APIException("Ese usuario no existe", 404)
+    if target.id == me.id and request.method == 'DELETE':
+        raise APIException("No puedes borrar tu propia cuenta desde aquí", 400)
+
+    if request.method == 'DELETE':
+        for model in USER_TABLES:
+            model.query.filter_by(user_id=target.id).delete(synchronize_session=False)
+        db.session.delete(target)
+        db.session.commit()
+        return jsonify({"ok": True, "id": user_id})
+
+    data = request.get_json(silent=True) or {}
+    if target.id == me.id and (data.get("is_active") is False or data.get("is_admin") is False):
+        raise APIException("No puedes desactivarte ni quitarte el rol de administrador", 400)
+    if "is_active" in data:
+        target.is_active = bool(data["is_active"])
+    if "is_admin" in data:
+        target.is_admin = bool(data["is_admin"])
+    if data.get("password"):
+        if len(data["password"]) < 6:
+            raise APIException("La clave nueva necesita 6 caracteres o más", 400)
+        target.password_hash = generate_password_hash(data["password"])
+    db.session.commit()
+    return jsonify({"user": admin_row(target)})
+
+
+@api.route('/admin/settings', methods=['PUT'])
+@jwt_required()
+def admin_settings():
+    admin_user()
+    data = request.get_json(silent=True) or {}
+    if data.get("registration") in ("open", "code", "closed"):
+        set_setting("registration", data["registration"])
+    if "invite_code" in data:
+        set_setting("invite_code", (data["invite_code"] or "").strip()[:60])
+    if get_setting("registration", "open") == "code" and not get_setting("invite_code"):
+        raise APIException("Escribe un código de invitación antes de activar ese modo", 400)
+    db.session.commit()
+    return jsonify({"settings": {"registration": get_setting("registration", "open"), "invite_code": get_setting("invite_code")}})
 
 
 # ───────────────────────── CRUD genérico ─────────────────────────

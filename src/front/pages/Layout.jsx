@@ -2,14 +2,13 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, useLocation, useOutlet, useNavigate, Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Home, Target, Flame, HeartPulse, Timer, Wind, BookOpen, Wallet, Sofa, Images, Trophy, Sparkles, Rocket, UserRound, Coins, Shield, Menu, X, Smartphone } from "lucide-react";
+import { Home, Target, Flame, HeartPulse, Timer, Wind, BookOpen, Wallet, Sofa, Images, Trophy, Sparkles, Rocket, UserRound, Coins, Shield, Menu, X, Smartphone, ShieldCheck } from "lucide-react";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 import useActions from "../hooks/useActions";
 import { TimersProvider, useTimers, mmss } from "../context/Timers";
 import { Sky } from "../components/Sky";
 import { Ring, cx } from "../components/ui";
 import { levelInfo, skyPhase, todayStr, habitCount } from "../lib/game";
-import { play } from "../lib/fx";
 
 // Cada sección es una "estación" del mapa, con su propio color
 export const NAV = [
@@ -32,7 +31,8 @@ export const NAV = [
   ] },
   { group: "Aliados", items: [{ to: "/copiloto", label: "Copiloto IA", icon: Sparkles, color: "#BFE0EE" }] },
 ];
-const FLAT = NAV.flatMap((g) => g.items);
+const CONTROL = { to: "/control", label: "Sala de control", icon: ShieldCheck, color: "#C9A227" };
+const FLAT = [...NAV.flatMap((g) => g.items), CONTROL];
 const MOBILE = ["/", "/habitos", "/enfoque", "/finanzas"];
 
 // Carga los datos una vez por sesión. Lo usan el Layout y el Estreno.
@@ -80,7 +80,7 @@ function SideNav({ onPick }) {
   const badge = { "/habitos": pending || null, "/enfoque": t.pomo.running || t.social.running ? "●" : null };
   return (
     <nav className="side-nav">
-      {NAV.map((g) => (
+      {NAV.map((g) => ({ ...g, items: g.group === "Aliados" && store.user.is_admin ? [...g.items, CONTROL] : g.items })).map((g) => (
         <div key={g.group} className="side-group">
           <span className="side-label">{g.group}</span>
           {g.items.map(({ to, label, icon: Icon, end, color }) => (

@@ -50,10 +50,18 @@ class User(Base):
     shields = db.Column(db.Integer, nullable=False, default=0)
     settings = db.Column(db.JSON, nullable=False, default=dict)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     created_at = db.Column(db.DateTime, default=now)
 
     def __repr__(self):
         return f"<User {self.username}>"
+
+
+class AppSetting(Base):
+    """Ajustes globales de la plataforma (por ejemplo, quién puede registrarse)."""
+    __tablename__ = "app_settings"
+    key = db.Column(db.String(60), unique=True, nullable=False)
+    value = db.Column(db.String(300), nullable=False, default="")
 
 
 class XPEvent(Owned):

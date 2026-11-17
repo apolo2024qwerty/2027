@@ -164,6 +164,7 @@ def ensure_seed():
         username="1ALE",
         password_hash=generate_password_hash("5678"),
         display_name="Alejo Sánchez",
+        is_admin=True,
         motto="Nuevo cuartel general, nueva disciplina, mismo fuego creador.",
         settings={"board_style": "collage", "water_goal": 2500, "sky": "auto", "monthly_income": 0},
     )

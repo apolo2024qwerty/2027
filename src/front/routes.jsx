@@ -15,6 +15,7 @@ import { Loot } from "./pages/Loot";
 import { Copilot } from "./pages/Copilot";
 import { Profile } from "./pages/Profile";
 import { Premiere } from "./pages/Premiere";
+import { Control } from "./pages/Control";
 
 const NotFound = () => (
   <div className="loader"><p>Este sendero no existe.</p><Link className="btn primary" to="/">Volver a la base</Link></div>
@@ -42,6 +43,7 @@ export const router = createBrowserRouter(
         <Route path="botin" element={<Loot />} />
         <Route path="copiloto" element={<Copilot />} />
         <Route path="perfil" element={<Profile />} />
+        <Route path="control" element={<Control />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </>

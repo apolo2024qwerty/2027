@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, ArrowUpRight } from "lucide-react";
@@ -9,6 +9,7 @@ import { Sky } from "../components/Sky";
 import { Glass, Field, cx } from "../components/ui";
 import { skyPhase } from "../lib/game";
 import { play } from "../lib/fx";
+import { api } from "../lib/api";
 
 const daysTo2027 = () => Math.ceil((new Date(2027, 0, 1) - new Date()) / 86400000);
 
@@ -17,7 +18,9 @@ export const Login = () => {
   const act = useActions();
   const navigate = useNavigate();
   const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ username: "", password: "", display_name: "" });
+  const [form, setForm] = useState({ username: "", password: "", display_name: "", invite_code: "" });
+  const [registration, setRegistration] = useState("open");
+  useEffect(() => { api("/public/config").then((c) => setRegistration(c.registration)).catch(() => {}); }, []);
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,7 +34,7 @@ export const Login = () => {
     setBusy(true);
     try {
       setLaunch(true); // evita la redirección inmediata mientras dura el despegue
-      await act.login(form.username, form.password, mode === "register", form.display_name);
+      await act.login(form.username, form.password, mode === "register", form.display_name, form.invite_code);
       play("win");
       setTimeout(() => navigate("/", { replace: true }), 1500);
     } catch (err) {
@@ -63,6 +66,7 @@ export const Login = () => {
           <p className="muted">{mode === "login" ? "Tu plan, tus rachas y tus cofres te están esperando." : "Empiezas con ocho pilares y hábitos listos para ajustar."}</p>
           <form onSubmit={submit} className="form">
             {mode === "register" && <Field label="Tu nombre"><input className="input" value={form.display_name} onChange={set("display_name")} placeholder="Como quieres que te llame" /></Field>}
+            {mode === "register" && registration === "code" && <Field label="Código de invitación"><input className="input" value={form.invite_code} onChange={set("invite_code")} required /></Field>}
             <Field label="Usuario"><input className="input" value={form.username} onChange={set("username")} autoCapitalize="characters" autoComplete="username" required autoFocus /></Field>
             <Field label="Clave">
               <div className="input-wrap">
@@ -75,9 +79,11 @@ export const Login = () => {
               {busy ? "Despegando…" : mode === "login" ? "Entrar a mi 2027" : "Crear mi cuenta"} <ArrowUpRight size={18} />
             </button>
           </form>
-          <button className="link" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}>
-            {mode === "login" ? "¿Primera vez? Crea tu cuenta" : "Ya tengo cuenta"}
-          </button>
+          {registration !== "closed" || mode === "register" ? (
+            <button className="link" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}>
+              {mode === "login" ? "¿Primera vez? Crea tu cuenta" : "Ya tengo cuenta"}
+            </button>
+          ) : <small className="muted" style={{ textAlign: "center" }}>Las cuentas nuevas las crea el administrador.</small>}
         </Glass>
       </motion.div>
       <div className="login-flash" />
