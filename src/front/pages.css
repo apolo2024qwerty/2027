@@ -7,6 +7,10 @@
 .scene3d { position: absolute; inset: 0; z-index: 0; }
 .scene3d canvas { display: block; width: 100% !important; height: 100% !important; }
 .login .sky-orb { display: none; }
+.login .sky::after { content: ""; position: absolute; inset: 0; background: radial-gradient(90% 70% at 30% 68%, rgba(255, 170, 120, .16), transparent 60%), linear-gradient(to top, rgba(9, 10, 32, .92), rgba(16, 14, 44, .5) 38%, transparent 70%); }
+.scene-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.scene-labels span { position: absolute; left: 0; top: 0; padding: 2px 9px; border-radius: 99px; font: 600 12px var(--body); color: color-mix(in srgb, var(--c) 55%, #fff); background: rgba(9, 10, 32, .45); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); white-space: nowrap; transition: opacity .4s; will-change: transform; }
+@media (max-width: 900px) { .scene-labels { display: none; } }
 .login-copy, .login-card-wrap { position: relative; z-index: 2; transition: opacity .6s, transform 1s var(--ease); }
 .login-copy { align-self: start; padding-top: 2vh; display: flex; flex-direction: column; gap: 14px; perspective: 800px; container-type: inline-size; min-width: 0; }
 .login-year { font-size: min(13vw, 34vh); font-weight: 800; line-height: .82; letter-spacing: -.06em; margin: 2vh 0 0 -.04em; display: flex; }
@@ -71,9 +75,10 @@
 .area-score { width: 26px; text-align: right; font-size: 18px; color: var(--c); }
 
 /* Secciones unidas y personalización */
-.hub-tabs { display: flex; justify-content: center; margin-bottom: 4px; }
+.hub-tabs { display: flex; justify-content: center; margin-top: 8px; }
 .hub-tabs .tab { padding-inline: 20px; font-size: 15px; }
-.hub-body { display: flex; flex-direction: column; gap: inherit; animation: hub-in .35s var(--ease); }
+.hub-body { animation: hub-in .35s var(--ease); }
+.hub-body > * + * { margin-top: 24px; }
 @keyframes hub-in { from { opacity: 0; transform: translateY(10px); } }
 .scene-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 6px 0 14px; }
 .scene-tile { display: flex; flex-direction: column; gap: 6px; padding: 6px 6px 8px; border-radius: 14px; border: 1px solid var(--line); background: rgba(5, 12, 24, .3); color: var(--text); font: 600 13px var(--body); cursor: pointer; transition: transform .2s, border-color .2s; }

@@ -3,7 +3,10 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const WORLDS = ["#F0A64A", "#E6CF52", "#86C55F", "#62CDB0", "#62B4E8", "#8C93F2", "#D48BF0", "#F08E7E"];
+const WORLDS = [["Salud", "#F0A64A"], ["Dinero", "#E6CF52"], ["Amor", "#86C55F"], ["Familia", "#62CDB0"],
+  ["Profesión", "#62B4E8"], ["Crecimiento", "#8C93F2"], ["Ocio", "#D48BF0"], ["Amigos", "#F08E7E"]];
+const SIZES = [0.8, 0.7, 1.1, 0.95, 1.05, 1.15, 0.85, 0.95];
+const TILT = -0.66; // qué tan abiertas se ven las órbitas
 
 const glowTexture = (inner, outer) => {
   const cv = document.createElement("canvas"); cv.width = cv.height = 256;
@@ -28,37 +31,58 @@ export function DreamScene({ launch }) {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 400);
     const system = new THREE.Group(); // todo el sistema, inclinado para que las órbitas se vean en perspectiva
-    system.rotation.set(-0.42, 0, 0.16);
+    system.rotation.set(TILT, 0, 0.1);
     scene.add(system);
     const trash = [];
     const keep = (x) => { trash.push(x); return x; };
 
     // La estrella: tú
-    const star = new THREE.Mesh(keep(new THREE.IcosahedronGeometry(2.1, 3)), keep(new THREE.MeshBasicMaterial({ color: 0xffe2a6 })));
+    const star = new THREE.Mesh(keep(new THREE.IcosahedronGeometry(2.3, 4)), keep(new THREE.MeshBasicMaterial({ color: 0xffe2a6 })));
     system.add(star);
     const halo = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(glowTexture("rgba(255,226,160,.95)", "rgba(245,160,110,.34)")), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-    halo.scale.set(21, 21, 1);
+    halo.scale.set(26, 26, 1);
     system.add(halo);
+    // Rayos suaves que giran despacio alrededor de la estrella
+    const rc = document.createElement("canvas"); rc.width = rc.height = 512;
+    const rg = rc.getContext("2d"); rg.translate(256, 256);
+    for (let i = 0; i < 14; i++) {
+      rg.rotate((Math.PI * 2) / 14);
+      const len = 150 + (i % 3) * 50, lg = rg.createLinearGradient(0, 0, len, 0);
+      lg.addColorStop(0, "rgba(255,225,165,.5)"); lg.addColorStop(1, "rgba(255,225,165,0)");
+      rg.fillStyle = lg; rg.beginPath(); rg.moveTo(0, -7); rg.lineTo(len, 0); rg.lineTo(0, 7); rg.fill();
+    }
+    const rays = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(new THREE.CanvasTexture(rc)), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })));
+    rays.scale.set(22, 22, 1);
+    system.add(rays);
     system.add(new THREE.PointLight(0xffd9a0, 420, 0, 1.7), new THREE.AmbientLight(0x8fa6d8, 0.55));
 
-    // Ocho mundos con su órbita
-    const worlds = WORLDS.map((hex, i) => {
-      const radius = 5.2 + i * 2.15, size = 0.5 + ((i * 7) % 5) * 0.14;
-      const pivot = new THREE.Group();
-      pivot.rotation.set(Math.sin(i * 2.1) * 0.16, 0, Math.cos(i * 1.7) * 0.12);
-      const ring = new THREE.Mesh(keep(new THREE.RingGeometry(radius - 0.018, radius + 0.018, 160)), keep(new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false })));
+    // Ocho mundos, uno por área de la vida: órbita, estela y nombre
+    const labels = document.createElement("div"); labels.className = "scene-labels"; el.appendChild(labels);
+    const worlds = WORLDS.map(([name, hex], i) => {
+      const radius = 6.6 + i * 2.75, size = SIZES[i];
+      const ring = new THREE.Mesh(keep(new THREE.RingGeometry(radius - 0.035, radius + 0.035, 200)), keep(new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false })));
       ring.rotation.x = Math.PI / 2;
-      const ball = new THREE.Mesh(keep(new THREE.IcosahedronGeometry(size, 2)), keep(new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 0.32, roughness: 0.5, flatShading: true })));
-      const aura = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(glowTexture(hex, "rgba(255,255,255,.07)")), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending })));
-      aura.scale.setScalar(size * 5.5);
+      const ball = new THREE.Mesh(keep(new THREE.IcosahedronGeometry(size, 3)), keep(new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 0.38, roughness: 0.45, flatShading: true })));
+      const aura = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(glowTexture(hex, "rgba(255,255,255,.06)")), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })));
+      aura.scale.setScalar(size * 5);
       ball.add(aura);
       if (i === 2 || i === 5) { // dos mundos llevan anillo propio
-        const belt = new THREE.Mesh(keep(new THREE.RingGeometry(size * 1.5, size * 2.1, 48)), keep(new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.55, side: THREE.DoubleSide })));
-        belt.rotation.x = 1.25; ball.add(belt);
+        const belt = new THREE.Mesh(keep(new THREE.RingGeometry(size * 1.4, size * 1.8, 64)), keep(new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false })));
+        belt.rotation.x = 1.2; ball.add(belt);
       }
-      pivot.add(ring, ball);
-      system.add(pivot);
-      return { ball, radius, speed: 0.34 / Math.sqrt(radius / 5), phase: i * 2.4 };
+      // Estela: un arco que se apaga detrás del mundo
+      const N = 48, arc = 1.5, tp = new Float32Array(N * 3), tc = new Float32Array(N * 3), col = new THREE.Color(hex);
+      for (let k = 0; k < N; k++) {
+        const a = -(k / (N - 1)) * arc, f = (1 - k / (N - 1)) ** 2;
+        tp.set([Math.cos(a) * radius, 0, Math.sin(a) * radius], k * 3);
+        tc.set([col.r * f, col.g * f, col.b * f], k * 3);
+      }
+      const tg = keep(new THREE.BufferGeometry());
+      tg.setAttribute("position", new THREE.BufferAttribute(tp, 3)); tg.setAttribute("color", new THREE.BufferAttribute(tc, 3));
+      const trail = new THREE.Line(tg, keep(new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })));
+      system.add(ring, trail, ball);
+      const tag = document.createElement("span"); tag.textContent = name; tag.style.setProperty("--c", hex); labels.appendChild(tag);
+      return { ball, trail, tag, radius, size, speed: 0.3 / Math.sqrt(radius / 6), phase: i * 2.399 + 0.6 };
     });
 
     // Polvo de estrellas: lejanas y un cinturón cercano que da profundidad
@@ -73,16 +97,20 @@ export function DreamScene({ launch }) {
       scene.add(pts);
       return pts;
     };
-    const far = dust(900, 170, 0.5, 0.8), near = dust(160, 46, 0.16, 0.6);
+    const far = dust(1100, 170, 0.5, 0.85), near = dust(220, 52, 0.17, 0.65);
 
     const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
     const onMove = (e) => { mouse.tx = e.clientX / window.innerWidth - 0.5; mouse.ty = e.clientY / window.innerHeight - 0.5; };
     let narrow = false;
+    const size = { w: 1, h: 1 }, v = new THREE.Vector3();
     const resize = () => {
       const w = el.clientWidth, h = el.clientHeight;
-      narrow = w < 820;
-      renderer.setSize(w, h); camera.aspect = w / h; camera.fov = narrow ? 64 : 46; camera.updateProjectionMatrix();
-      system.position.set(narrow ? 0 : -4.5, narrow ? 7 : 0.5, 0); // en escritorio el sistema vive a la izquierda, detrás del 2027
+      narrow = w < 900;
+      size.w = w; size.h = h;
+      renderer.setSize(w, h); camera.aspect = w / h; camera.fov = narrow ? 66 : 46; camera.updateProjectionMatrix();
+      // En escritorio el sistema vive abajo y a la izquierda: el texto queda arriba y los mundos tienen aire
+      system.position.set(narrow ? 0 : -9, narrow ? 9.5 : -6.5, 0);
+      system.scale.setScalar(narrow ? 0.5 : 1);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("resize", resize);
@@ -100,22 +128,30 @@ export function DreamScene({ launch }) {
         const a = w.phase + t * w.speed;
         w.ball.position.set(Math.cos(a) * w.radius, 0, Math.sin(a) * w.radius);
         w.ball.rotation.y = t * 0.6;
+        w.trail.rotation.y = -a;
       });
       star.rotation.y = t * 0.2; star.scale.setScalar(1 + Math.sin(t * 1.4) * 0.03);
-      halo.material.rotation = t * 0.04;
+      halo.material.rotation = t * 0.04; rays.material.rotation = -t * 0.05; rays.scale.setScalar(22 + Math.sin(t * 0.9) * 1.6);
       system.rotation.y = t * 0.03 + mouse.x * 0.7;
-      system.rotation.x = -0.42 + mouse.y * 0.36;
+      system.rotation.x = TILT + mouse.y * 0.3;
       far.rotation.y = t * 0.006 + mouse.x * 0.1; near.rotation.y = -t * 0.02 + mouse.x * 0.3;
 
-      let z = 40, px = mouse.x * -3, py = 3 + mouse.y * -2;
+      let z = 44, px = mouse.x * -3, py = 1 + mouse.y * -2;
       if (launchAt.current) { // despegue: directo a la estrella
         const k = Math.min(1, (nowT - launchAt.current) / 1500), e = k * k * k;
-        z = 40 - e * 37; px += (system.position.x - px) * e; py += (system.position.y - py) * e;
-        halo.scale.setScalar(21 + e * 60);
+        z = 44 - e * 41; px += (system.position.x - px) * e; py += (system.position.y - py) * e;
+        halo.scale.setScalar(26 + e * 70);
       }
       camera.position.set(px, py, z);
-      camera.lookAt(launchAt.current ? system.position.x : 0, launchAt.current ? system.position.y : 1.5, 0);
+      camera.lookAt(launchAt.current ? system.position.x : 0, launchAt.current ? system.position.y : 0, 0);
       renderer.render(scene, camera);
+      // Nombres de las áreas, pegados a su mundo
+      worlds.forEach((w) => {
+        w.ball.getWorldPosition(v); v.project(camera);
+        const x = (v.x * 0.5 + 0.5) * size.w, y = (-v.y * 0.5 + 0.5) * size.h;
+        w.tag.style.transform = `translate(${x.toFixed(1)}px, ${(y + w.size * (narrow ? 9 : 15) + 10).toFixed(1)}px) translateX(-50%)`;
+        w.tag.style.opacity = launchAt.current || v.z > 1 ? 0 : 1;
+      });
       if (!still || launchAt.current) raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -126,7 +162,7 @@ export function DreamScene({ launch }) {
       window.removeEventListener("resize", resize);
       trash.forEach((x) => x.dispose());
       renderer.dispose();
-      el.removeChild(renderer.domElement);
+      el.removeChild(renderer.domElement); el.removeChild(labels);
     };
   }, []);
 
