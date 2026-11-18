@@ -105,7 +105,7 @@ export const Premiere = () => {
 						<motion.div className="pr-center" variants={stagger(0.5, 0.2)} initial="hide" animate="show">
 							<motion.p className="pr-kicker" variants={up}>Así está construido</motion.p>
 							<div className="pr-specs">
-								{[[store.pillars.length, "pilares"], [store.goals.length, "metas"], [bosses.length, "jefes finales"], [store.habits.filter((h) => h.active).length, "hábitos"], [store.goals.reduce((a, g) => a + g.xp, 0), "XP en juego"]].map(([n, label]) => (
+								{[[store.pillars.length, "áreas de vida"], [store.goals.length, "metas"], [bosses.length, "jefes finales"], [store.habits.filter((h) => h.active).length, "hábitos"], [store.goals.reduce((a, g) => a + g.xp, 0), "XP en juego"]].map(([n, label]) => (
 									<motion.div key={label} className="pr-spec" variants={up}><b><CountUp to={n} /></b><span>{label}</span></motion.div>
 								))}
 							</div>
@@ -187,7 +187,7 @@ export const Premiere = () => {
 						<>
 							<Rocket3D go={signed} />
 							<motion.div className="pr-launch" variants={stagger(0.2, 0.4)} initial="hide" animate="show">
-								<motion.h1 variants={up}>{signed ? "Despegaste. Nos vemos en la cima." : "Lo voy a lograr."}</motion.h1>
+								<motion.h1 variants={up}>{signed ? "Despegaste. Nos vemos en el siguiente nivel." : "Lo voy a lograr."}</motion.h1>
 								<motion.p className="pr-motto" variants={up}>{signed ? "Tu firma quedó guardada. Ahora toca el primer hábito." : `${store.goals.length} metas, ${bosses.length} jefes finales y un año entero para ir por ellos.`}</motion.p>
 								<motion.div className="row center wrap" variants={up}>
 									{!signed && <button className="btn primary lg" onClick={sign}><PenLine size={18} /> Firmar mi compromiso</button>}

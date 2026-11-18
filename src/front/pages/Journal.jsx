@@ -1,4 +1,4 @@
-// Bitácora: el diario de la expedición.
+// Bitácora: el diario del año.
 import { useState } from "react";
 import { Trash2, Feather } from "lucide-react";
 import useGlobalReducer from "../hooks/useGlobalReducer";

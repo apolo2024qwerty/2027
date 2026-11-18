@@ -8,9 +8,9 @@ import { Glass, PageHead, cx } from "../components/ui";
 
 const IDEAS = [
 	"¿En qué debería enfocarme esta semana según mi plan?",
-	"Arma mi plan de ahorro para la expedición a Guatemala.",
+	"Mira mi Rueda de la Vida y dime por cuál área empezar.",
 	"¿Cómo voy con mis hábitos y cuál estoy descuidando?",
-	"Diseña 12 semanas de entrenamiento para la 21K de Bogotá.",
+	"Ayúdame a convertir un sueño en una meta con fecha y primer paso.",
 	"Ordena mis metas del primer trimestre por prioridad.",
 	"¿Qué puedo recortar este mes para ahorrar más?",
 ];

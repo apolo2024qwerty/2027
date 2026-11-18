@@ -79,12 +79,12 @@ export function CheckBtn({ on, onClick, color, label, size }) {
   );
 }
 
-export function Tabs({ value, onChange, options }) {
+export function Tabs({ value, onChange, options, name = "tab-pill" }) {
   return (
     <div className="tabs" role="tablist">
       {options.map(([id, label]) => (
         <button key={id} role="tab" aria-selected={value === id} className={cx("tab", value === id && "active")} onClick={() => onChange(id)}>
-          {value === id && <motion.span layoutId="tab-pill" className="tab-pill" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+          {value === id && <motion.span layoutId={name} className="tab-pill" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
           <span>{label}</span>
         </button>
       ))}

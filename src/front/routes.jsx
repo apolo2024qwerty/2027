@@ -1,4 +1,5 @@
-import { createBrowserRouter, createRoutesFromElements, Route, Link } from "react-router-dom";
+import { createBrowserRouter, createRoutesFromElements, Route, Link, Navigate, useSearchParams } from "react-router-dom";
+import { Tabs } from "./components/ui";
 import { Layout } from "./pages/Layout";
 import { Login } from "./pages/Login";
 import { Home } from "./pages/Home";
@@ -18,8 +19,24 @@ import { Premiere } from "./pages/Premiere";
 import { Control } from "./pages/Control";
 
 const NotFound = () => (
-  <div className="loader"><p>Este sendero no existe.</p><Link className="btn primary" to="/">Volver a la base</Link></div>
+  <div className="loader"><p>Esta página no existe.</p><Link className="btn primary" to="/">Volver al inicio</Link></div>
 );
+
+// Secciones unidas: dos pantallas bajo un mismo punto del menú. La pestaña activa viaja en la URL (?ver=).
+const Hub = ({ tabs }) => {
+  const [params, setParams] = useSearchParams();
+  const active = tabs.find((t) => t.id === params.get("ver")) || tabs[0];
+  return (
+    <>
+      <div className="hub-tabs"><Tabs name="hub-pill" value={active.id} options={tabs.map((t) => [t.id, t.label])}
+        onChange={(id) => setParams(id === tabs[0].id ? {} : { ver: id }, { replace: true })} /></div>
+      <div key={active.id} className="hub-body">{active.el}</div>
+    </>
+  );
+};
+const HomeHub = () => <Hub tabs={[{ id: "hoy", label: "☀️ Hoy", el: <Home /> }, { id: "botin", label: "🏆 Botín y logros", el: <Loot /> }]} />;
+const HabitsHub = () => <Hub tabs={[{ id: "habitos", label: "🔥 Hábitos", el: <Habits /> }, { id: "cuerpo", label: "💧 Cuerpo", el: <Body /> }]} />;
+const FocusHub = () => <Hub tabs={[{ id: "enfoque", label: "🎯 Enfoque", el: <Focus /> }, { id: "respira", label: "🌬️ Respira", el: <Breathe /> }]} />;
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -30,17 +47,17 @@ export const router = createBrowserRouter(
 
       {/* Todo lo demás vive dentro del Layout (barra lateral + HUD) */}
       <Route path="/" element={<Layout />} errorElement={<NotFound />}>
-        <Route index element={<Home />} />
+        <Route index element={<HomeHub />} />
         <Route path="plan" element={<Plan />} />
         <Route path="vision" element={<Vision />} />
-        <Route path="habitos" element={<Habits />} />
-        <Route path="cuerpo" element={<Body />} />
-        <Route path="enfoque" element={<Focus />} />
-        <Route path="respira" element={<Breathe />} />
+        <Route path="habitos" element={<HabitsHub />} />
+        <Route path="cuerpo" element={<Navigate to="/habitos?ver=cuerpo" replace />} />
+        <Route path="enfoque" element={<FocusHub />} />
+        <Route path="respira" element={<Navigate to="/enfoque?ver=respira" replace />} />
         <Route path="bitacora" element={<Journal />} />
         <Route path="finanzas" element={<Finance />} />
         <Route path="apartamento" element={<Apartment />} />
-        <Route path="botin" element={<Loot />} />
+        <Route path="botin" element={<Navigate to="/?ver=botin" replace />} />
         <Route path="copiloto" element={<Copilot />} />
         <Route path="perfil" element={<Profile />} />
         <Route path="control" element={<Control />} />

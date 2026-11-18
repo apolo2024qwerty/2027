@@ -2,38 +2,36 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, useLocation, useOutlet, useNavigate, Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Home, Target, Flame, HeartPulse, Timer, Wind, BookOpen, Wallet, Sofa, Images, Trophy, Sparkles, Rocket, UserRound, Coins, Shield, Menu, X, Smartphone, ShieldCheck } from "lucide-react";
+import { Home, Target, Flame, Timer, BookOpen, Wallet, Sofa, Images, Sparkles, Rocket, UserRound, Coins, Shield, Menu, X, Smartphone, ShieldCheck } from "lucide-react";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 import useActions from "../hooks/useActions";
 import { TimersProvider, useTimers, mmss } from "../context/Timers";
 import { Sky } from "../components/Sky";
 import { Ring, cx } from "../components/ui";
-import { levelInfo, skyPhase, todayStr, habitCount } from "../lib/game";
+import { levelInfo, skyPhase, todayStr, habitCount, applyAccent } from "../lib/game";
 
 // Cada sección es una "estación" del mapa, con su propio color
 export const NAV = [
-  { group: "Campamento", items: [{ to: "/", label: "Base", icon: Home, end: true, color: "#E8B95B" }] },
-  { group: "Trazar la ruta", items: [
+  { group: "Tu día", items: [
+    { to: "/", label: "Inicio y logros", icon: Home, end: true, color: "#E8B95B" },
+    { to: "/habitos", label: "Hábitos y cuerpo", icon: Flame, color: "#F0995C" },
+    { to: "/enfoque", label: "Enfoque y calma", icon: Timer, color: "#6C9BD9" },
+    { to: "/bitacora", label: "Bitácora", icon: BookOpen, color: "#9B8CE0" },
+  ] },
+  { group: "Tus sueños", items: [
     { to: "/plan", label: "Plan 2027", icon: Target, color: "#E27D60" },
     { to: "/vision", label: "Tablero de visión", icon: Images, color: "#D58BB8" },
   ] },
-  { group: "La travesía", items: [
-    { to: "/habitos", label: "Hábitos", icon: Flame, color: "#F0995C" },
-    { to: "/cuerpo", label: "Cuerpo", icon: HeartPulse, color: "#E0626B" },
-    { to: "/enfoque", label: "Enfoque", icon: Timer, color: "#6C9BD9" },
-    { to: "/respira", label: "Respira", icon: Wind, color: "#7FC8C0" },
-    { to: "/bitacora", label: "Bitácora", icon: BookOpen, color: "#9B8CE0" },
-  ] },
-  { group: "Tesoros", items: [
+  { group: "Tus recursos", items: [
     { to: "/finanzas", label: "Finanzas", icon: Wallet, color: "#5FA57C" },
-    { to: "/apartamento", label: "Apartamento", icon: Sofa, color: "#D9A066" },
-    { to: "/botin", label: "Botín y logros", icon: Trophy, color: "#E8B95B" },
+    { to: "/apartamento", label: "Mi espacio", icon: Sofa, color: "#D9A066" },
   ] },
-  { group: "Aliados", items: [{ to: "/copiloto", label: "Copiloto IA", icon: Sparkles, color: "#BFE0EE" }] },
+  { group: "Apoyo", items: [{ to: "/copiloto", label: "Copiloto IA", icon: Sparkles, color: "#BFE0EE" }] },
 ];
 const CONTROL = { to: "/control", label: "Sala de control", icon: ShieldCheck, color: "#C9A227" };
 const FLAT = [...NAV.flatMap((g) => g.items), CONTROL];
-const MOBILE = ["/", "/habitos", "/enfoque", "/finanzas"];
+const MOBILE = ["/", "/habitos", "/plan", "/finanzas"];
+const SHORT = { "/": "Inicio", "/habitos": "Hábitos", "/plan": "Plan", "/finanzas": "Finanzas" };
 
 // Carga los datos una vez por sesión. Lo usan el Layout y el Estreno.
 export function useBoot() {
@@ -44,10 +42,10 @@ export function useBoot() {
 }
 
 export const Loader = () => (
-  <div className="loader"><div className="loader-peak" /><p>Subiendo al campamento…</p></div>
+  <div className="loader"><div className="loader-star" /><p>Abriendo tu 2027…</p></div>
 );
 
-const CHEERS = ["Hoy se sube un tramo más", "Un paso y ya estás en ruta", "Vas con buen ritmo", "Ya casi coronas el día", "Día perfecto. Qué nivel."];
+const CHEERS = ["Hoy sumas un punto más", "Un hábito y ya arrancaste", "Vas con buen ritmo", "Ya casi cierras el día", "Día perfecto. Qué nivel."];
 
 // Tarjeta de jugador: nivel, XP y misiones del día
 function PlayerCard() {
@@ -59,7 +57,7 @@ function PlayerCard() {
   const done = daily.filter((h) => habitCount(h, store.habitLogs, today)).length;
   const cheer = !daily.length ? CHEERS[0] : done === daily.length ? CHEERS[4] : CHEERS[Math.min(3, Math.floor((done / daily.length) * 4))];
   return (
-    <button className="player" onClick={() => navigate("/botin")} title={`Faltan ${lv.left} XP para ${lv.next}`}>
+    <button className="player" onClick={() => navigate("/?ver=botin")} title={`Faltan ${lv.left} XP para ${lv.next}`}>
       <Ring pct={lv.pct} size={54} stroke={5}><span className="avatar">{(store.user.display_name || store.user.username)[0]}</span></Ring>
       <span className="player-txt">
         <b>{(store.user.display_name || store.user.username).split(" ")[0]}</b>
@@ -80,7 +78,7 @@ function SideNav({ onPick }) {
   const badge = { "/habitos": pending || null, "/enfoque": t.pomo.running || t.social.running ? "●" : null };
   return (
     <nav className="side-nav">
-      {NAV.map((g) => ({ ...g, items: g.group === "Aliados" && store.user.is_admin ? [...g.items, CONTROL] : g.items })).map((g) => (
+      {NAV.map((g) => ({ ...g, items: g.group === "Apoyo" && store.user.is_admin ? [...g.items, CONTROL] : g.items })).map((g) => (
         <div key={g.group} className="side-group">
           <span className="side-label">{g.group}</span>
           {g.items.map(({ to, label, icon: Icon, end, color }) => (
@@ -110,7 +108,7 @@ function Hud({ title }) {
         <span className="chip" title="Racha de días"><Flame size={15} color="var(--coral)" /><b className="num">{store.streak}</b></span>
         {store.user.shields > 0 && <span className="chip" title="Escudos de descanso"><Shield size={15} color="var(--ice)" /><b className="num">{store.user.shields}</b></span>}
         <span className="chip" title="Monedas"><Coins size={15} color="var(--gold)" /><b className="num">{store.user.coins}</b></span>
-        <Link to="/botin" className="hud-level" title={`Faltan ${lv.left} XP para ${lv.next}`}>
+        <Link to="/?ver=botin" className="hud-level" title={`Faltan ${lv.left} XP para ${lv.next}`}>
           <Ring pct={lv.pct} size={40} stroke={4}><b className="num">{lv.level}</b></Ring>
           <div className="hud-level-txt"><b>{lv.name}</b><small className="muted num">{store.user.xp} XP</small></div>
         </Link>
@@ -173,7 +171,7 @@ function Shell() {
   return (
     <div className="app">
       <aside className="side glass">
-        <Link to="/" className="brand"><span className="brand-mark" /><span>Cumbre<b>27</b></span></Link>
+        <Link to="/" className="brand"><span className="brand-mark" /><span>Level Up<b>2027</b></span></Link>
         <PlayerCard />
         <SideNav />
         <Link to="/estreno" className="launch-btn"><Rocket size={18} /><span><b>El estreno</b><small>Mira tu 2027 despegar</small></span></Link>
@@ -194,7 +192,7 @@ function Shell() {
 
       <nav className="dock glass">
         {FLAT.filter((i) => MOBILE.includes(i.to)).map(({ to, label, icon: Icon, end }) => (
-          <NavLink key={to} to={to} end={end} className={({ isActive }) => cx("dock-link", isActive && "active")}><Icon size={20} /><span>{label}</span></NavLink>
+          <NavLink key={to} to={to} end={end} className={({ isActive }) => cx("dock-link", isActive && "active")}><Icon size={20} /><span>{SHORT[to] || label}</span></NavLink>
         ))}
         <button className={cx("dock-link", menu && "active")} onClick={() => setMenu(true)}><Menu size={20} /><span>Más</span></button>
       </nav>
@@ -203,7 +201,7 @@ function Shell() {
         {menu && (
           <motion.div className="sheet-back" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMenu(false)}>
             <motion.div className="sheet glass" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 340, damping: 34 }} onClick={(e) => e.stopPropagation()}>
-              <div className="between"><Link to="/" className="brand"><span className="brand-mark" /><span>Cumbre<b>27</b></span></Link>
+              <div className="between"><Link to="/" className="brand"><span className="brand-mark" /><span>Level Up<b>2027</b></span></Link>
                 <button className="btn icon ghost" onClick={() => setMenu(false)} aria-label="Cerrar"><X size={18} /></button></div>
               <SideNav onPick={() => setMenu(false)} />
               <Link to="/estreno" className="launch-btn"><Rocket size={18} /><span><b>El estreno</b><small>Mira tu 2027 despegar</small></span></Link>
@@ -219,10 +217,12 @@ function Shell() {
 
 export const Layout = () => {
   const store = useBoot();
+  const accent = store.user?.settings?.accent;
+  useEffect(() => { applyAccent(accent); }, [accent]);
   if (!store.token) return <Navigate to="/login" replace />;
   return (
     <>
-      <Sky soft phase={skyPhase(store.user?.settings?.sky)} />
+      <Sky soft phase={skyPhase(store.user?.settings?.sky)} scene={store.user?.settings?.scene || "orbitas"} />
       {store.ready ? <TimersProvider><Shell /></TimersProvider> : <Loader />}
     </>
   );

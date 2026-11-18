@@ -57,7 +57,7 @@ export const Focus = () => {
 						</div>
 					</div>
 
-					<input className="input focus-label" placeholder="¿En qué vas a trabajar? Ej. Propuesta de COMPASS" value={t.pomo.label} onChange={(e) => t.setLabel(e.target.value)} />
+					<input className="input focus-label" placeholder="¿En qué vas a trabajar? Ej. Terminar la propuesta" value={t.pomo.label} onChange={(e) => t.setLabel(e.target.value)} />
 
 					<div className="row center">
 						{t.pomo.running

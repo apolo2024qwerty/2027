@@ -31,7 +31,7 @@ export default function useActions() {
       const big = events.find((e) => e.xp > 0 && ["boss", "chest", "launch", "shield"].includes(e.kind));
       const after = levelOf(res.user.xp);
       if (after > before) {
-        dispatch({ type: "celebrate", payload: { emoji: "⛰️", title: "Nivel " + after, subtitle: levelName(after) } });
+        dispatch({ type: "celebrate", payload: { emoji: "🚀", title: "Subiste al nivel " + after, subtitle: levelName(after) } });
         fireworks(); play("win");
       } else if (big) {
         if (big.kind === "boss") dispatch({ type: "celebrate", payload: { emoji: "⚔️", title: "Jefe final derrotado", subtitle: big.reason.split(": ")[1] } });
@@ -88,6 +88,10 @@ export default function useActions() {
       launch: () => call("POST", "/launch"),
       async saveProfile(data) {
         try { const res = await api("/me", { method: "PUT", body: data }); dispatch({ type: "set", payload: { key: "user", value: res.user } }); return res; }
+        catch (e) { return fail(e); }
+      },
+      async resetPlan(password) {
+        try { await api("/me/reset", { method: "POST", body: { password } }); dispatch({ type: "boot", payload: await api("/bootstrap?day=" + todayStr()) }); toast({ tone: "good", title: "Tu plan quedó en blanco. A soñar de nuevo." }); return true; }
         catch (e) { return fail(e); }
       },
       async changePassword(current, next) {

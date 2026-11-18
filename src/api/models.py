@@ -1,5 +1,5 @@
 """
-Modelos de Cumbre 27.
+Modelos de Level Up 2027.
 Todo cuelga de User (user_id) para que la plataforma sea multiusuario desde el día 1.
 """
 from datetime import date, datetime, timezone

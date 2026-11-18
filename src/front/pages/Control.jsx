@@ -62,7 +62,7 @@ export const Control = () => {
 					))}
 				</div>
 				<div className="row wrap">
-					<input className="input" style={{ maxWidth: 280 }} value={code} onChange={(e) => setCode(e.target.value)} placeholder="Código de invitación, ej. CUMBRE-2027" />
+					<input className="input" style={{ maxWidth: 280 }} value={code} onChange={(e) => setCode(e.target.value)} placeholder="Código de invitación, ej. LEVELUP-2027" />
 					<button className="btn" disabled={code === settings.invite_code} onClick={() => saveSettings({ invite_code: code })}>Guardar código</button>
 				</div>
 			</Glass>

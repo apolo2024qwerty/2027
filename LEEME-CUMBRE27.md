@@ -1,4 +1,4 @@
-# Cumbre 27
+# Level Up 2027
 
 Plataforma gamificada para planear y cumplir tu 2027. Backend Flask + SQLAlchemy + JWT, frontend React + Vite.
 

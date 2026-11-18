@@ -1,5 +1,5 @@
 """
-API de Cumbre 27.
+API de Level Up 2027.
 - Autenticación con JWT y contraseñas con hash.
 - CRUD genérico por recurso, siempre filtrado por el usuario del token.
 - Acciones de juego (completar, registrar, canjear) que devuelven XP y monedas.
@@ -17,7 +17,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from api.models import (db, User, AppSetting, XPEvent, Pillar, Goal, Habit, HabitLog, DailyLog, Workout,
                         FocusSession, JournalEntry, Fund, Transaction, Budget, Investment,
                         ApartmentItem, VisionItem, Reward, ChatMessage, now)
-from api.seed import seed_user_plan
+from api.seed import seed_user_plan, wipe_user_data, reset_user_plan, USER_TABLES, BASE_SETTINGS
 from api.utils import APIException
 
 api = Blueprint('api', __name__)
@@ -167,10 +167,10 @@ def register():
         raise APIException("Ese usuario ya existe", 409)
     user = User(username=username, password_hash=generate_password_hash(password),
                 display_name=(data.get("display_name") or username).strip(),
-                settings={"board_style": "collage", "water_goal": 2500, "sky": "auto", "monthly_income": 0})
+                settings=dict(BASE_SETTINGS))
     db.session.add(user)
     db.session.commit()
-    seed_user_plan(user, full=False)
+    seed_user_plan(user)
     return jsonify({"token": create_access_token(identity=str(user.id)), "user": user.serialize()}), 201
 
 
@@ -209,6 +209,19 @@ def change_password():
     if len(data.get("new") or "") < 6:
         raise APIException("La clave nueva necesita 6 caracteres o más", 400)
     user.password_hash = generate_password_hash(data["new"])
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@api.route('/me/reset', methods=['POST'])
+@jwt_required()
+def reset_me():
+    """Empezar de cero: borra metas, hábitos, registros y finanzas del usuario y deja la Rueda de la Vida en blanco."""
+    user = current_user()
+    data = request.get_json(silent=True) or {}
+    if not check_password_hash(user.password_hash, data.get("password") or ""):
+        raise APIException("La clave no coincide", 400)
+    reset_user_plan(user)
     db.session.commit()
     return jsonify({"ok": True})
 
@@ -440,10 +453,13 @@ def money(n):
 
 def build_context(user, today):
     uid = user.id
-    pillars = {p.id: p for p in Pillar.query.filter_by(user_id=uid)}
+    pillars = {p.id: p for p in Pillar.query.filter_by(user_id=uid).order_by(Pillar.position)}
+    wheel = (user.settings or {}).get("wheel") or {}
     lines = [f"Hoy es {today.isoformat()}. Usuario: {user.display_name}. Lema: {user.motto}",
              f"Juego: {user.xp} XP, {user.coins} monedas, racha de {compute_streak(user, today)} días, {user.shields} escudos.",
-             "", "METAS 2027 (por pilar):"]
+             "", "RUEDA DE LA VIDA (cómo califica hoy cada área, de 1 a 10): " + (", ".join(
+                 f"{p.name} {wheel[str(p.id)]}" for p in pillars.values() if str(p.id) in wheel) or "aún sin calificar"),
+             "", "METAS 2027 (por área):"]
     for g in Goal.query.filter_by(user_id=uid).order_by(Goal.pillar_id, Goal.position):
         p = pillars.get(g.pillar_id)
         state = {"done": "CUMPLIDA", "doing": "en curso"}.get(g.status, "pendiente")
@@ -486,15 +502,16 @@ def build_context(user, today):
     lines.append(f"ENFOQUE (7 días): {int(focus_min)} min de trabajo profundo, {int(social_min)} min en redes.")
     pending = [a.name for a in ApartmentItem.query.filter_by(user_id=uid, bought=False)]
     if pending:
-        lines.append("APARTAMENTO, falta comprar: " + ", ".join(pending))
+        lines.append("MI ESPACIO, falta conseguir: " + ", ".join(pending))
     for j in JournalEntry.query.filter_by(user_id=uid).order_by(JournalEntry.id.desc()).limit(3):
         lines.append(f"BITÁCORA {j.day}: {j.title}. {(j.body or '')[:300]}")
     return "\n".join(lines)
 
 
-SYSTEM_PROMPT = """Eres el Copiloto de Cumbre 27, la plataforma donde {name} planea y cumple su 2027.
+SYSTEM_PROMPT = """Eres el Copiloto de Level Up 2027, la plataforma donde {name} planea y cumple su 2027.
 Hablas en español de Colombia, cercano, directo y concreto. Nada de relleno ni frases motivacionales vacías.
 Usas los datos reales del usuario que vienen abajo: cita cifras, metas y fechas cuando ayuden.
+Las metas se organizan por las áreas de la Rueda de la Vida. Si un área tiene nota baja o no tiene metas, puedes proponer una.
 Si te piden un plan (financiero, de entrenamiento, de semana), entrégalo en pasos cortos con números y fechas.
 Si un dato no está en el contexto, dilo y pregunta. No inventes cifras. Los montos son pesos colombianos.
 No das asesoría financiera ni médica profesional: das orden, cuentas claras y opciones.
@@ -559,11 +576,6 @@ def ai_clear():
 
 # ───────────────────────── sala de control (solo admin) ─────────────────────────
 
-# Orden de borrado: primero lo que depende de otras tablas
-USER_TABLES = [HabitLog, XPEvent, ChatMessage, DailyLog, Workout, FocusSession, JournalEntry, Transaction,
-               Goal, Habit, Budget, Investment, ApartmentItem, VisionItem, Reward, Fund, Pillar]
-
-
 def admin_user():
     user = current_user()
     if not user.is_admin:
@@ -605,10 +617,10 @@ def admin_create_user():
         raise APIException("Ese usuario ya existe", 409)
     user = User(username=username, password_hash=generate_password_hash(password),
                 display_name=(data.get("display_name") or username).strip(),
-                settings={"board_style": "collage", "water_goal": 2500, "sky": "auto", "monthly_income": 0})
+                settings=dict(BASE_SETTINGS))
     db.session.add(user)
     db.session.commit()
-    seed_user_plan(user, full=False)
+    seed_user_plan(user)
     return jsonify({"user": admin_row(user)}), 201
 
 
@@ -623,8 +635,7 @@ def admin_change_user(user_id):
         raise APIException("No puedes borrar tu propia cuenta desde aquí", 400)
 
     if request.method == 'DELETE':
-        for model in USER_TABLES:
-            model.query.filter_by(user_id=target.id).delete(synchronize_session=False)
+        wipe_user_data(target)
         db.session.delete(target)
         db.session.commit()
         return jsonify({"ok": True, "id": user_id})

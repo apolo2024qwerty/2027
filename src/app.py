@@ -13,7 +13,7 @@ from api.models import db
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
-from api.seed import ensure_seed
+from api.seed import ensure_seed, upgrade_to_wheel
 
 # from models import Person
 
@@ -63,13 +63,18 @@ setup_commands(app)
 # Add all endpoints form the API with a "api" prefix
 app.register_blueprint(api, url_prefix='/api')
 
-# Si las tablas ya existen (después de `pipenv run upgrade`) y no hay usuarios, se crea 1ALE con su plan
+# Si las tablas ya existen (después de `pipenv run upgrade`) y no hay usuarios, se crea 1ALE
 with app.app_context():
     try:
-        if sa_inspect(db.engine).has_table("users") and ensure_seed():
-            print(" * Cumbre 27: usuario 1ALE creado con el Plan Maestro 2027")
+        tables = sa_inspect(db.engine)
+        if tables.has_table("users") and tables.has_table("app_settings"):
+            if ensure_seed():
+                print(" * Level Up 2027: usuario 1ALE creado")
+            elif upgrade_to_wheel():
+                print(" * Level Up 2027: el plan de 1ALE quedó en blanco, con la Rueda de la Vida")
     except Exception as error:  # la base aún no está lista
-        print(" * Cumbre 27: semilla pendiente ->", error)
+        db.session.rollback()
+        print(" * Level Up 2027: semilla pendiente ->", error)
 
 # Handle/serialize errors like a JSON object
 

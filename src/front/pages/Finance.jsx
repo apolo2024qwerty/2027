@@ -9,7 +9,7 @@ import { Glass, PageHead, Tabs, Modal, Form, Bar, Liquid, Stat, Empty, Field, Ch
 import { todayStr, cop, copShort, MON, MONTHS, monthsUntil, shortDay, parseDay } from "../lib/game";
 
 const KIND = { income: "Ingreso", expense: "Gasto", saving: "Ahorro", invest: "Inversión" };
-const INCOME_CATS = ["Salario colegio", "Nébula Estudio", "COMPASS", "Tribu 2600", "Licencias educativas", "Otros ingresos"];
+const INCOME_CATS = ["Salario", "Negocio propio", "Trabajos independientes", "Ventas", "Rendimientos", "Otros ingresos"];
 const PIE = ["#E8B95B", "#E27D60", "#6C9BD9", "#5FA57C", "#9B8CE0", "#D58BB8", "#7FC8C0", "#D9A066", "#BFE0EE"];
 const shiftMonth = (ym, n) => { const [y, m] = ym.split("-").map(Number); const d = new Date(y, m - 1 + n, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
 const monthName = (ym) => MONTHS[+ym.slice(5) - 1] + " " + ym.slice(0, 4);
@@ -312,7 +312,7 @@ function GoalPlan({ store, byCat, avgIncome, onAsk }) {
 				<h3>¿Cómo vas a concretarlo?</h3>
 				<div className="form">
 					<Field label="¿Cuál meta quieres planear?"><select className="input" value={fundId} onChange={(e) => setFundId(e.target.value)}>{store.funds.map((f) => <option key={f.id} value={f.id}>{f.emoji} {f.name}</option>)}</select></Field>
-					<Field label="¿Cuánto te entra al mes, sumando todo?"><input className="input" type="number" inputMode="decimal" value={v.income} onChange={set("income")} placeholder="Salario, Nébula, COMPASS…" /></Field>
+					<Field label="¿Cuánto te entra al mes, sumando todo?"><input className="input" type="number" inputMode="decimal" value={v.income} onChange={set("income")} placeholder="Salario, negocio, extras…" /></Field>
 					<Field label="Gastos fijos del mes" hint="Arriendo, servicios, mercado, transporte."><input className="input" type="number" inputMode="decimal" value={v.fixed} onChange={set("fixed")} /></Field>
 					<Field label="Gastos variables del mes" hint="Salidas, suscripciones, compras."><input className="input" type="number" inputMode="decimal" value={v.variable} onChange={set("variable")} /></Field>
 					<Field label="¿Cuánto sientes que puedes recortar?"><input className="input" type="number" inputMode="decimal" value={v.cut} onChange={set("cut")} placeholder="Sé honesto, no heroico" /></Field>

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, ArrowUpRight } from "lucide-react";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 import useActions from "../hooks/useActions";
-import { MountainScene } from "../components/MountainScene";
+import { DreamScene } from "../components/DreamScene";
 import { Sky } from "../components/Sky";
 import { Glass, Field, cx } from "../components/ui";
 import { skyPhase } from "../lib/game";
@@ -46,15 +46,15 @@ export const Login = () => {
 
   return (
     <div className={cx("login", flying && "flying")}>
-      <Sky phase={skyPhase("dawn")} />
-      <MountainScene launch={flying} />
+      <Sky phase={skyPhase("dusk")} scene="limpio" />
+      <DreamScene launch={flying} />
 
       <motion.div className="login-copy" initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.12, delayChildren: 0.2 } } }}>
-        <motion.div className="brand" variants={rise}><span className="brand-mark" /><span>Cumbre<b>27</b></span></motion.div>
+        <motion.div className="brand" variants={rise}><span className="brand-mark" /><span>Level Up<b>2027</b></span></motion.div>
         <motion.h1 className="login-year" variants={rise} aria-label="2027">
           {"2027".split("").map((d, i) => <motion.span key={i} variants={digit}>{d}</motion.span>)}
         </motion.h1>
-        <motion.p className="login-lead" variants={rise}>Planea el año como un lanzamiento. Vívelo como un juego. Llega a la cima.</motion.p>
+        <motion.p className="login-lead" variants={rise}>Ponle fecha a lo que sueñas. Juega tu año. Sube de nivel todos los días.</motion.p>
         <motion.p className="login-count" variants={rise}>
           {left > 0 ? <><b className="num">{left}</b> días para que empiece</> : <>Día <b className="num">{1 - left}</b> de tu 2027</>}
         </motion.p>
@@ -62,8 +62,8 @@ export const Login = () => {
 
       <motion.div className="login-card-wrap" initial={{ opacity: 0, y: 40, rotateX: 14 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.5, type: "spring", stiffness: 120, damping: 18 }}>
         <Glass tilt className={cx("login-card", error && "shake")}>
-          <h2>{mode === "login" ? "Entra a tu campamento" : "Abre tu campamento"}</h2>
-          <p className="muted">{mode === "login" ? "Tu plan, tus rachas y tus cofres te están esperando." : "Empiezas con ocho pilares y hábitos listos para ajustar."}</p>
+          <h2>{mode === "login" ? "Entra a tu 2027" : "Empieza a planear tu 2027"}</h2>
+          <p className="muted">{mode === "login" ? "Tus metas, tus rachas y tus ahorros te están esperando." : "Empiezas con tu Rueda de la Vida: ocho áreas para llenar con lo que sueñas."}</p>
           <form onSubmit={submit} className="form">
             {mode === "register" && <Field label="Tu nombre"><input className="input" value={form.display_name} onChange={set("display_name")} placeholder="Como quieres que te llame" /></Field>}
             {mode === "register" && registration === "code" && <Field label="Código de invitación"><input className="input" value={form.invite_code} onChange={set("invite_code")} required /></Field>}
@@ -76,7 +76,7 @@ export const Login = () => {
             </Field>
             {error && <p className="form-error" role="alert">{error}</p>}
             <button className="btn primary lg" disabled={busy}>
-              {busy ? "Despegando…" : mode === "login" ? "Entrar a mi 2027" : "Crear mi cuenta"} <ArrowUpRight size={18} />
+              {busy ? "Entrando…" : mode === "login" ? "Entrar a mi 2027" : "Crear mi cuenta"} <ArrowUpRight size={18} />
             </button>
           </form>
           {registration !== "closed" || mode === "register" ? (

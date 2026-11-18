@@ -1,34 +1,15 @@
-// Base: el tablero del día.
+// Inicio: el tablero del día y la Rueda de la Vida.
 import { Link } from "react-router-dom";
 import { Swords, Play, ArrowUpRight, Droplets } from "lucide-react";
 import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 import useActions from "../hooks/useActions";
 import { useTimers, mmss } from "../context/Timers";
 import { Glass, Bar, CheckBtn, Liquid, cx } from "../components/ui";
+import { Wheel, wheelAverage } from "../components/Wheel";
 import { todayStr, niceDay, habitCount, MONTHS, cop, copShort } from "../lib/game";
 
 const MOODS = ["😣", "😕", "😐", "🙂", "🤩"];
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches"; };
-
-// La montaña del año: el escalador sube con cada meta cumplida
-const ROUTE = [[14, 118], [40, 100], [30, 82], [62, 70], [50, 52], [82, 42], [74, 26], [100, 12]];
-function Climb({ done, total }) {
-	const pct = total ? done / total : 0, seg = pct * (ROUTE.length - 1), i = Math.min(ROUTE.length - 2, Math.floor(seg)), k = seg - i;
-	const x = ROUTE[i][0] + (ROUTE[i + 1][0] - ROUTE[i][0]) * k, y = ROUTE[i][1] + (ROUTE[i + 1][1] - ROUTE[i][1]) * k;
-	return (
-		<div className="climb" title={`${done} de ${total} metas`}>
-			<svg viewBox="0 0 200 130" aria-hidden="true">
-				<path d="M0 130 L52 46 L70 66 L100 8 L128 58 L146 40 L200 130Z" className="climb-rock" />
-				<path d="M100 8 L86 36 L96 30 L104 40 L112 30 L116 40Z" className="climb-snow" />
-				<polyline points={ROUTE.map((p) => p.join(",")).join(" ")} className="climb-route" />
-				<line x1="100" y1="12" x2="100" y2="-4" className="climb-pole" /><path d="M100 -4 L116 1 L100 6Z" className="climb-flag" />
-				{ROUTE.slice(1, -1).map(([cx, cy], n) => <circle key={n} cx={cx} cy={cy} r="2.6" className={"climb-camp" + (n + 1 <= seg ? " on" : "")} />)}
-				<g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform 1.2s cubic-bezier(.2,.8,.2,1)" }}><circle r="13" className="climb-me-glow" /><text textAnchor="middle" dy="7" fontSize="20">🧗</text></g>
-			</svg>
-			<div className="climb-txt"><b className="num big">{done}<small>/{total}</small></b><small className="muted">metas coronadas</small></div>
-		</div>
-	);
-}
 
 export const Home = () => {
 	const { store } = useGlobalReducer();
@@ -49,6 +30,8 @@ export const Home = () => {
 	const pillar = (id) => store.pillars.find((p) => p.id === id);
 
 	const goalsDone = store.goals.filter((g) => g.status === "done").length;
+	const scores = store.user.settings?.wheel || {};
+	const avg = wheelAverage(store.pillars, scores), rated = avg > 0;
 	const bosses = store.goals.filter((g) => g.kind === "boss" && g.status !== "done").sort((a, b) => (a.month || 13) - (b.month || 13)).slice(0, 3);
 
 	const log = store.dailyLogs.find((d) => d.day === today) || {};
@@ -69,14 +52,20 @@ export const Home = () => {
 					) : (
 						<h1 className="hero-count">Día <span className="num">{dayOfYear}</span> de 365</h1>
 					)}
-					<p className="hero-motto">{store.user.motto}</p>
+					<p className="hero-motto">{store.user.motto || "Mi 2027 empieza hoy."}</p>
 					<div className="row wrap">
 						<Link to="/estreno" className="btn primary"><Play size={16} /> Ver el estreno de mi 2027</Link>
-						<Link to="/plan" className="btn">Ajustar el plan</Link>
+						<Link to="/plan" className="btn">{store.goals.length ? `${goalsDone} de ${store.goals.length} metas cumplidas` : "Escribir mi primera meta"}</Link>
 					</div>
 				</div>
 				<div className="hero-side">
-					<Climb done={goalsDone} total={store.goals.length} />
+					<Link to="/plan?ver=rueda" className="hero-wheel" title="Abrir mi Rueda de la Vida">
+						<Wheel pillars={store.pillars} scores={scores} />
+						<span className="hero-wheel-txt">
+							{rated ? <><b className="num big">{avg.toFixed(1).replace(".", ",")}</b><small className="muted">tu rueda hoy, de 10</small></>
+								: <><b>Califica tu rueda</b><small className="muted">¿cómo está hoy cada área de tu vida?</small></>}
+						</span>
+					</Link>
 				</div>
 			</Glass>
 
@@ -125,7 +114,7 @@ export const Home = () => {
 							</li>
 						))}
 					</ul>
-				) : <p className="muted">No queda ningún jefe en pie. Agrega uno más grande en el plan.</p>}
+				) : <p className="muted">{store.goals.length ? "No queda ningún jefe en pie. Agrega uno más grande en el plan." : "Un jefe final es ese sueño grande que da miedo y ganas a la vez. Escribe el primero en tu plan."}</p>}
 				<Link to="/plan" className="link">Ver todo el plan <ArrowUpRight size={14} /></Link>
 			</Glass>
 
@@ -170,6 +159,7 @@ export const Home = () => {
 						<div><span className="muted">Libre</span><b className={cx("num", income - expense - saved < 0 && "bad")}>{cop(income - expense - saved)}</b></div>
 					</div>
 				) : <p className="muted">Aún no hay movimientos este mes. Registra el primero y gana XP por llevar las cuentas.</p>}
+				{!store.funds.length && <p className="muted">Crea un cofre para cada sueño que cuesta plata: un viaje, un curso, tu fondo de emergencia.</p>}
 				<div className="fund-strip">
 					{store.funds.slice(0, 4).map((f) => (
 						<div key={f.id} className="fund-mini" style={{ "--c": f.color }}>

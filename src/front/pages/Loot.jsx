@@ -1,4 +1,4 @@
-// Botín y logros: la ruta de niveles, las medallas, la tienda de premios y el historial de XP.
+// Botín y logros: los niveles, las medallas, la tienda de premios y el historial de XP.
 import { useState } from "react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Plus, Coins, Pencil } from "lucide-react";
@@ -32,7 +32,7 @@ export const Loot = () => {
 					<ol className="trail">
 						{LEVELS.map((name, i) => (
 							<li key={name} className={cx("trail-stop", i + 1 < lv.level && "past", i + 1 === lv.level && "here")} style={{ "--h": i }}>
-								<span className="trail-dot">{i + 1 === lv.level ? "🧗" : i + 1 < lv.level ? "✓" : i + 1}</span>
+								<span className="trail-dot">{i + 1 === lv.level ? "⭐" : i + 1 < lv.level ? "✓" : i + 1}</span>
 								<b>{name}</b><small className="muted num">{xpForLevel(i + 1)} XP</small>
 							</li>
 						))}

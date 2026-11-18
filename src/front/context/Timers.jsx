@@ -64,9 +64,9 @@ export function TimersProvider({ children }) {
 
   // Título de la pestaña
   useEffect(() => {
-    if (pomo.running) document.title = `${mmss(pomoLeft)} · ${pomo.phase === "focus" ? "Enfoque" : "Descanso"} | Cumbre 27`;
-    else if (social.running) document.title = `${mmss(socialMs)} · Redes${socialOver ? " (pasado)" : ""} | Cumbre 27`;
-    else document.title = "Cumbre 27";
+    if (pomo.running) document.title = `${mmss(pomoLeft)} · ${pomo.phase === "focus" ? "Enfoque" : "Descanso"} | Level Up 2027`;
+    else if (social.running) document.title = `${mmss(socialMs)} · Redes${socialOver ? " (pasado)" : ""} | Level Up 2027`;
+    else document.title = "Level Up 2027";
   }, [pomo.running, social.running, Math.floor(pomoLeft / 1000), Math.floor(socialMs / 1000)]); // eslint-disable-line
 
   const api = {

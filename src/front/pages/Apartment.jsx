@@ -1,4 +1,4 @@
-// Apartamento: el plano del cuartel general. Cada compra enciende un objeto en 3D.
+// Apartamento: el plano de tu espacio. Cada compra enciende un objeto en 3D.
 import { useState } from "react";
 import { Plus, Lock, Pencil } from "lucide-react";
 import useGlobalReducer from "../hooks/useGlobalReducer";
@@ -19,7 +19,7 @@ export const Apartment = () => {
 
 	return (
 		<>
-			<PageHead title="Tu cuartel general" sub="Toca un objeto del plano cuando lo compres: pasa de sombra a color y suma 30 XP de confort.">
+			<PageHead title="Tu espacio, como lo sueñas" sub="Anota lo que quieres para tu casa, cuarto u oficina. Toca cada objeto cuando lo consigas: pasa de sombra a color y suma 30 XP.">
 				<button className="btn primary" onClick={() => setModal({})}><Plus size={16} /> Agregar objeto</button>
 			</PageHead>
 
@@ -27,7 +27,7 @@ export const Apartment = () => {
 				<div className="apt-head">
 					<Ring pct={items.length ? (bought / items.length) * 100 : 0} size={84} stroke={8}><b className="num">{bought}/{items.length}</b></Ring>
 					<div>
-						<h3>{bought === items.length && items.length ? "Cuartel completo. Bienvenido a casa." : `Faltan ${items.length - bought} por desbloquear`}</h3>
+						<h3>{bought === items.length && items.length ? "Tu espacio está completo. Bienvenido a casa." : !items.length ? "Anota lo primero que quieres para tu espacio" : `Faltan ${items.length - bought} por conseguir`}</h3>
 						<p className="muted">{pending > 0 ? `Presupuesto pendiente: ${cop(pending)}` : "Ponle precio a cada objeto para saber cuánto falta invertir."}</p>
 					</div>
 				</div>

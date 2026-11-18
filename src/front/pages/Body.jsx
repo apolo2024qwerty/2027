@@ -128,7 +128,7 @@ export const Body = () => {
 							</li>
 						))}
 					</ul>
-				) : <Empty emoji="🏃" title="Tu primera sesión te espera">Ciclovía, running, fuerza o montaña: todo cuenta para la 21K y el Nevado.</Empty>}
+				) : <Empty emoji="🏃" title="Tu primera sesión te espera">Caminar, correr, bailar, gimnasio o yoga: todo movimiento cuenta.</Empty>}
 			</Glass>
 
 			<Modal open={modal} onClose={() => setModal(false)} title="Registrar entrenamiento">
@@ -137,7 +137,7 @@ export const Body = () => {
 					{ name: "day", label: "Fecha", type: "date" },
 					{ name: "minutes", label: "Minutos", type: "number", min: 1, required: true },
 					{ name: "km", label: "Kilómetros (si aplica)", type: "number", step: "0.1" },
-					{ name: "note", label: "Nota", placeholder: "Cómo te sentiste, ruta, ritmo" },
+					{ name: "note", label: "Nota", placeholder: "Cómo te sentiste" },
 				]} initial={{ kind: "run", day: today }} submit="Registrar"
 					onSubmit={async (v) => { await act.create("workouts", { ...v, km: v.km || 0 }); setModal(false); }} />
 			</Modal>
