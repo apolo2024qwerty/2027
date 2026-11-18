@@ -5,8 +5,8 @@ import * as THREE from "three";
 
 const WORLDS = [["Salud", "#F0A64A"], ["Dinero", "#E6CF52"], ["Amor", "#86C55F"], ["Familia", "#62CDB0"],
   ["Profesión", "#62B4E8"], ["Crecimiento", "#8C93F2"], ["Ocio", "#D48BF0"], ["Amigos", "#F08E7E"]];
-const SIZES = [0.8, 0.7, 1.1, 0.95, 1.05, 1.15, 0.85, 0.95];
-const TILT = -0.66; // qué tan abiertas se ven las órbitas
+const SIZES = [0.6, 0.5, 0.8, 0.7, 0.9, 0.75, 0.6, 0.7];
+const TILT = -0.5; // qué tan abiertas se ven las órbitas
 
 const glowTexture = (inner, outer) => {
   const cv = document.createElement("canvas"); cv.width = cv.height = 256;
@@ -40,7 +40,7 @@ export function DreamScene({ launch }) {
     const star = new THREE.Mesh(keep(new THREE.IcosahedronGeometry(2.3, 4)), keep(new THREE.MeshBasicMaterial({ color: 0xffe2a6 })));
     system.add(star);
     const halo = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(glowTexture("rgba(255,226,160,.95)", "rgba(245,160,110,.34)")), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-    halo.scale.set(26, 26, 1);
+    halo.scale.set(22, 22, 1);
     system.add(halo);
     // Rayos suaves que giran despacio alrededor de la estrella
     const rc = document.createElement("canvas"); rc.width = rc.height = 512;
@@ -51,7 +51,7 @@ export function DreamScene({ launch }) {
       lg.addColorStop(0, "rgba(255,225,165,.5)"); lg.addColorStop(1, "rgba(255,225,165,0)");
       rg.fillStyle = lg; rg.beginPath(); rg.moveTo(0, -7); rg.lineTo(len, 0); rg.lineTo(0, 7); rg.fill();
     }
-    const rays = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(new THREE.CanvasTexture(rc)), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })));
+    const rays = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(new THREE.CanvasTexture(rc)), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })));
     rays.scale.set(22, 22, 1);
     system.add(rays);
     system.add(new THREE.PointLight(0xffd9a0, 420, 0, 1.7), new THREE.AmbientLight(0x8fa6d8, 0.55));
@@ -59,19 +59,19 @@ export function DreamScene({ launch }) {
     // Ocho mundos, uno por área de la vida: órbita, estela y nombre
     const labels = document.createElement("div"); labels.className = "scene-labels"; el.appendChild(labels);
     const worlds = WORLDS.map(([name, hex], i) => {
-      const radius = 6.6 + i * 2.75, size = SIZES[i];
-      const ring = new THREE.Mesh(keep(new THREE.RingGeometry(radius - 0.035, radius + 0.035, 200)), keep(new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false })));
+      const radius = 6 + i * 2.2, size = SIZES[i];
+      const ring = new THREE.Mesh(keep(new THREE.RingGeometry(radius - 0.02, radius + 0.02, 200)), keep(new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false })));
       ring.rotation.x = Math.PI / 2;
       const ball = new THREE.Mesh(keep(new THREE.IcosahedronGeometry(size, 3)), keep(new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 0.38, roughness: 0.45, flatShading: true })));
-      const aura = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(glowTexture(hex, "rgba(255,255,255,.06)")), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })));
-      aura.scale.setScalar(size * 5);
+      const aura = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(glowTexture(hex, "rgba(255,255,255,.06)")), transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending })));
+      aura.scale.setScalar(size * 4.5);
       ball.add(aura);
-      if (i === 2 || i === 5) { // dos mundos llevan anillo propio
+      if (i === 4) { // dos mundos llevan anillo propio
         const belt = new THREE.Mesh(keep(new THREE.RingGeometry(size * 1.4, size * 1.8, 64)), keep(new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false })));
         belt.rotation.x = 1.2; ball.add(belt);
       }
       // Estela: un arco que se apaga detrás del mundo
-      const N = 48, arc = 1.5, tp = new Float32Array(N * 3), tc = new Float32Array(N * 3), col = new THREE.Color(hex);
+      const N = 48, arc = 0.8, tp = new Float32Array(N * 3), tc = new Float32Array(N * 3), col = new THREE.Color(hex);
       for (let k = 0; k < N; k++) {
         const a = -(k / (N - 1)) * arc, f = (1 - k / (N - 1)) ** 2;
         tp.set([Math.cos(a) * radius, 0, Math.sin(a) * radius], k * 3);
@@ -80,9 +80,9 @@ export function DreamScene({ launch }) {
       const tg = keep(new THREE.BufferGeometry());
       tg.setAttribute("position", new THREE.BufferAttribute(tp, 3)); tg.setAttribute("color", new THREE.BufferAttribute(tc, 3));
       const trail = new THREE.Line(tg, keep(new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })));
-      system.add(ring, trail, ball);
+      system.add(ring, ball);
       const tag = document.createElement("span"); tag.textContent = name; tag.style.setProperty("--c", hex); labels.appendChild(tag);
-      return { ball, trail, tag, radius, size, speed: 0.3 / Math.sqrt(radius / 6), phase: i * 2.399 + 0.6 };
+      return { ball, trail, ring, tag, radius, size, speed: 0.3 / Math.sqrt(radius / 6), phase: i * 2.399 + 0.6 };
     });
 
     // Polvo de estrellas: lejanas y un cinturón cercano que da profundidad
@@ -97,7 +97,7 @@ export function DreamScene({ launch }) {
       scene.add(pts);
       return pts;
     };
-    const far = dust(1100, 170, 0.5, 0.85), near = dust(220, 52, 0.17, 0.65);
+    const far = dust(700, 170, 0.45, 0.7), near = dust(90, 52, 0.14, 0.5);
 
     const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
     const onMove = (e) => { mouse.tx = e.clientX / window.innerWidth - 0.5; mouse.ty = e.clientY / window.innerHeight - 0.5; };
@@ -109,8 +109,10 @@ export function DreamScene({ launch }) {
       size.w = w; size.h = h;
       renderer.setSize(w, h); camera.aspect = w / h; camera.fov = narrow ? 66 : 46; camera.updateProjectionMatrix();
       // En escritorio el sistema vive abajo y a la izquierda: el texto queda arriba y los mundos tienen aire
-      system.position.set(narrow ? 0 : -9, narrow ? 9.5 : -6.5, 0);
-      system.scale.setScalar(narrow ? 0.5 : 1);
+      system.position.set(narrow ? 0 : -8, narrow ? 6.6 : -9.5, 0);
+      system.scale.setScalar(narrow ? 0.46 : 1);
+      // En celular solo quedan la estrella y cuatro mundos, asomando detrás de la tarjeta
+      worlds.forEach((w, i) => { const on = !narrow || i < 4; w.ball.visible = w.trail.visible = w.ring.visible = on; });
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("resize", resize);

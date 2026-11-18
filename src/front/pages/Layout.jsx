@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, useLocation, useOutlet, useNavigate, Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Home, Target, Flame, Timer, BookOpen, Wallet, Sofa, Images, Sparkles, Rocket, UserRound, Coins, Shield, Menu, X, Smartphone, ShieldCheck } from "lucide-react";
+import { Home, Target, Flame, Timer, BookOpen, Wallet, Sofa, Images, Sparkles, Rocket, UserRound, Coins, Shield, Menu, X, Smartphone, ShieldCheck, LogOut } from "lucide-react";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 import useActions from "../hooks/useActions";
 import { TimersProvider, useTimers, mmss } from "../context/Timers";
@@ -161,6 +161,7 @@ function Celebration() {
 }
 
 function Shell() {
+  const act = useActions();
   const location = useLocation();
   const outlet = useOutlet();
   const [menu, setMenu] = useState(false);
@@ -204,6 +205,10 @@ function Shell() {
               <div className="between"><Link to="/" className="brand"><span className="brand-mark" /><span>Level Up<b>2027</b></span></Link>
                 <button className="btn icon ghost" onClick={() => setMenu(false)} aria-label="Cerrar"><X size={18} /></button></div>
               <SideNav onPick={() => setMenu(false)} />
+              <div className="sheet-account">
+                <Link to="/perfil" className="btn" onClick={() => setMenu(false)}><UserRound size={16} /> Mi perfil</Link>
+                <button className="btn danger ghost" onClick={act.logout}><LogOut size={16} /> Cerrar sesión</button>
+              </div>
               <Link to="/estreno" className="launch-btn"><Rocket size={18} /><span><b>El estreno</b><small>Mira tu 2027 despegar</small></span></Link>
             </motion.div>
           </motion.div>

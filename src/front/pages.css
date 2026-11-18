@@ -8,7 +8,7 @@
 .scene3d canvas { display: block; width: 100% !important; height: 100% !important; }
 .login .sky-orb { display: none; }
 .login .sky::after { content: ""; position: absolute; inset: 0; background: radial-gradient(90% 70% at 30% 68%, rgba(255, 170, 120, .16), transparent 60%), linear-gradient(to top, rgba(9, 10, 32, .92), rgba(16, 14, 44, .5) 38%, transparent 70%); }
-.scene-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.scene-labels { display: none; }
 .scene-labels span { position: absolute; left: 0; top: 0; padding: 2px 9px; border-radius: 99px; font: 600 12px var(--body); color: color-mix(in srgb, var(--c) 55%, #fff); background: rgba(9, 10, 32, .45); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); white-space: nowrap; transition: opacity .4s; will-change: transform; }
 @media (max-width: 900px) { .scene-labels { display: none; } }
 .login-copy, .login-card-wrap { position: relative; z-index: 2; transition: opacity .6s, transform 1s var(--ease); }
@@ -473,3 +473,6 @@ button.vtile:hover { transform: translateY(-6px) scale(1.02); z-index: 3; box-sh
 .account-stats { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12.5px; }
 .account-stats span { padding: 3px 9px; border-radius: 8px; background: rgba(255, 255, 255, .07); }
 .btn.danger:not(.ghost):not(:disabled) { background: rgba(226, 125, 96, .2); border-color: rgba(226, 125, 96, .5); }
+
+.sheet-account { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sheet .station-label { white-space: normal; font-size: 14px; line-height: 1.15; }
